@@ -159,7 +159,7 @@ th:last-child{border-right:none}
 td{padding:8px 12px;border-bottom:1px solid var(--g1);vertical-align:middle;white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#f8fafc!important}
-tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm-noc td{background:#fffbeb}
+tr.conciliado td{background:#f0fdf4}tr.no-conciliado td{background:#fffbeb}tr.lm-noc td{background:#fffbeb}tr.girado-nc td{background:#fff7ed}tr.girado-nca td{background:#fef3c7}
 .pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;white-space:nowrap}
 .pill.green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-br)}.pill.amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-br)}
 .pill.abono{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}.pill.cargo{background:#fce7f3;color:#be185d;border:1px solid #f9a8d4}
@@ -231,6 +231,19 @@ tr.ambiguo td{background:#fff7ed}
 .pill.manual{background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd}
 
 .pill.manual{background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd}
+.pill.gnc{background:#ffedd5;color:#9a3412;border:1px solid #fdba74}
+
+/* ── BOTONES DE ACCIÓN EN NO CONCILIADOS / GIRADOS ── */
+.acc-cell{display:flex;flex-direction:column;gap:4px;align-items:stretch;min-width:170px}
+.acc-btn{padding:5px 10px;font-size:11px;font-weight:600;border:none;border-radius:6px;cursor:pointer;line-height:1.3;font-family:var(--font);white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:5px;transition:all .14s}
+.acc-btn-conc{background:var(--navy);color:white}
+.acc-btn-conc:hover{background:#1a3a6b}
+.acc-btn-gnc{background:#fb923c;color:white}
+.acc-btn-gnc:hover{background:#ea580c}
+.acc-btn-gnca{background:#92400e;color:white}
+.acc-btn-gnca:hover{background:#78350f}
+.acc-btn-undo{background:#f1f5f9;color:var(--g6);border:1px solid var(--g3)}
+.acc-btn-undo:hover{background:var(--g2)}
 
 /* ── DROPDOWN ESTADO ── */
 .est-cell{position:relative;cursor:pointer;user-select:none;overflow:visible!important}
@@ -326,9 +339,23 @@ tr.ambiguo td{background:#fff7ed}
         </div>
       </div>
 
-      <button class="btn-process" id="btn-process" onclick="process()" disabled>
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0 10px">
+        <div style="flex:1;height:1px;background:var(--g2)"></div>
+        <span style="font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--g4)">o continuar trabajo previo</span>
+        <div style="flex:1;height:1px;background:var(--g2)"></div>
+      </div>
+
+      <div class="drop-zone" id="zone-resume" ondragover="onDragOver(event,'resume')" ondragleave="onDragLeave('resume')" ondrop="onDrop(event,'resume')" style="padding:20px 14px">
+        <span class="drop-icon">↻</span>
+        <div class="drop-label">Continuar trabajo previo</div>
+        <div class="drop-hint">Excel descargado del dashboard (mantiene avance: conciliaciones, girados, notas)</div>
+        <div class="drop-name" id="name-resume"></div>
+        <input type="file" accept=".xlsx,.xls" onchange="onFileSelect(event,'resume')">
+      </div>
+
+      <button class="btn-process" id="btn-process" onclick="process()" disabled style="margin-top:18px">
         <div class="spinner"></div>
-        <span class="btn-text">⚡ Iniciar comprobación</span>
+        <span class="btn-text" id="btn-process-text">⚡ Iniciar comprobación</span>
       </button>
 
       <div class="upload-meta">
@@ -398,6 +425,8 @@ tr.ambiguo td{background:#fff7ed}
       <div class="tab active" onclick="switchTab('banco')">Cartola Banco <span class="badge" id="b-cnt-banco">0</span></div>
       <div class="tab" onclick="switchTab('lm')">Libro Mayor <span class="badge" id="b-cnt-lm">0</span></div>
       <div class="tab" onclick="switchTab('noc')">No Conciliados <span class="badge red" id="b-cnt-noc">0</span></div>
+      <div class="tab" onclick="switchTab('gnc')">Girados y No Cobrados <span class="badge" id="b-cnt-gnc" style="background:#fb923c;color:white">0</span></div>
+      <div class="tab" onclick="switchTab('gnca')">Girados y No Cobrados Mes Anterior <span class="badge" id="b-cnt-gnca" style="background:#92400e;color:white">0</span></div>
     </div>
   </div>
   <div class="content">
@@ -406,6 +435,8 @@ tr.ambiguo td{background:#fff7ed}
       <div class="legend-item"><div class="legend-dot green"></div>Conciliado</div>
       <div class="legend-item"><div class="legend-dot amber"></div>No conciliado</div>
       <div class="legend-item"><div class="legend-dot" style="background:#fff7ed;border:1px solid #fed7aa"></div>Ambiguo — revisión requerida</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ffedd5;border:1px solid #fdba74"></div>Girado · mes actual</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;border:1px solid #92400e"></div>Girado · mes anterior</div>
       <div class="legend-item" style="margin-left:8px"><span class="pill cr-rut">🎯 RUT+Monto</span><span style="margin-left:4px;font-size:11px;color:var(--g5)">coincidencia exacta</span></div>
       <div class="legend-item"><span class="pill cr-monto">≈ Solo Monto</span><span style="margin-left:4px;font-size:11px;color:var(--g5)">sin RUT disponible</span></div>
     </div>
@@ -464,7 +495,7 @@ tr.ambiguo td{background:#fff7ed}
 // ══════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════
-let files = { banco: null, lm: null };
+let files = { banco: null, lm: null, resume: null };
 let DATA = null;
 let DATA_CUENTA = null;   // { num, nombre } | null
 let currentTab = 'banco';
@@ -504,7 +535,31 @@ function setFile(k, f) {
   files[k] = f;
   document.getElementById('zone-'+k).classList.add('loaded');
   document.getElementById('name-'+k).textContent = '✓ ' + f.name;
-  document.getElementById('btn-process').disabled = !(files.banco && files.lm);
+
+  // Si carga "resume", deshabilitar las otras zonas y viceversa
+  const btn = document.getElementById('btn-process');
+  const btnText = document.getElementById('btn-process-text');
+  if (k === 'resume') {
+    // Modo continuar: limpiar banco/lm si estaban cargados
+    files.banco = null; files.lm = null;
+    ['banco','lm'].forEach(z => {
+      document.getElementById('zone-'+z).classList.remove('loaded');
+      document.getElementById('name-'+z).textContent = '';
+      const inp = document.querySelector('#zone-'+z+' input'); if (inp) inp.value = '';
+    });
+    btn.disabled = false;
+    if (btnText) btnText.textContent = '↻ Cargar trabajo previo';
+  } else {
+    // Modo normal: limpiar resume si estaba cargado
+    if (files.resume) {
+      files.resume = null;
+      document.getElementById('zone-resume').classList.remove('loaded');
+      document.getElementById('name-resume').textContent = '';
+      const inp = document.querySelector('#zone-resume input'); if (inp) inp.value = '';
+    }
+    btn.disabled = !(files.banco && files.lm);
+    if (btnText) btnText.textContent = '⚡ Iniciar comprobación';
+  }
 }
 function readFile(f) {
   return new Promise((res, rej) => {
@@ -524,11 +579,22 @@ async function process() {
   document.getElementById('error-bar').style.display = 'none';
   await new Promise(r => setTimeout(r, 80));
   try {
-    const [bancoAB, lmAB] = await Promise.all([readFile(files.banco), readFile(files.lm)]);
-    const bancoResult = parseXLSX(bancoAB);
-    DATA_CUENTA = bancoResult.cuenta;
-    DATA = reconcile(bancoResult.data, parseLM(lmAB));
-    showResults();
+    if (files.resume) {
+      // ── Modo continuar trabajo previo ──
+      const ab = await readFile(files.resume);
+      const parsed = parseDashboardXLSX(ab);
+      DATA_CUENTA = parsed.cuenta;
+      DATA = parsed.data;
+      DATA._origen = files.resume.name;
+      showResults();
+    } else {
+      // ── Modo normal ──
+      const [bancoAB, lmAB] = await Promise.all([readFile(files.banco), readFile(files.lm)]);
+      const bancoResult = parseXLSX(bancoAB);
+      DATA_CUENTA = bancoResult.cuenta;
+      DATA = reconcile(bancoResult.data, parseLM(lmAB));
+      showResults();
+    }
   } catch(e) {
     const bar = document.getElementById('error-bar');
     bar.textContent = '⚠ ' + e.message;
@@ -641,6 +707,131 @@ function parseLM(ab) {
     });
   }
   return out;
+}
+
+// ══════════════════════════════════════════════
+// PARSE DASHBOARD XLSX (continuar trabajo previo)
+// ══════════════════════════════════════════════
+function parseDashboardXLSX(ab) {
+  const wb = XLSX.read(ab, { type:'array', cellDates:true });
+
+  // Validar que es un archivo del dashboard
+  if (!wb.SheetNames.includes('Cartola Banco') || !wb.SheetNames.includes('Libro Mayor')) {
+    throw new Error('No es un archivo válido del dashboard. Debe contener las hojas "Cartola Banco" y "Libro Mayor".');
+  }
+
+  // ── Leer META si existe ──
+  let cuenta = null;
+  if (wb.SheetNames.includes('_META')) {
+    const metaRows = XLSX.utils.sheet_to_json(wb.Sheets['_META'], { header:1, defval:null });
+    const marker = metaRows[0] && metaRows[0][0];
+    if (marker && String(marker).startsWith('ANID_DASHBOARD_RESUMABLE')) {
+      const dict = {};
+      metaRows.slice(1).forEach(r => { if (r[0]) dict[String(r[0]).trim()] = r[1]; });
+      if (dict.cuenta_num || dict.cuenta_nombre) {
+        cuenta = {
+          num: String(dict.cuenta_num || ''),
+          nombre: String(dict.cuenta_nombre || 'Capital Humano')
+        };
+      }
+    }
+  }
+
+  // ── Parsear Cartola Banco ──
+  // Estructura: fila 1=título, 2=subtítulo, 3=headers, 4+=datos
+  // Cols visibles: 1=# 2=Cartola 3=Fecha 4=Tipo 5=Descripción 6=RUT Banco 7=Monto
+  //                8=Folio LM 9=Fecha LM 10=Comprobante LM 11=Tipo Comp.
+  //                12=Criterio 13=Nota 14=Estado
+  // Cols ocultas:  15=tipo_code 16=estado 17=_editado 18=_girado_no_cobrado
+  const bancoRows = XLSX.utils.sheet_to_json(wb.Sheets['Cartola Banco'], { header:1, defval:null });
+  const bancoData = bancoRows.slice(3).filter(r => r && r[0] != null && r[2]).map(r => {
+    const tipoStr = String(r[3]||'').trim().toUpperCase();
+    const tipo_code = r[14] ? String(r[14]).trim() : (tipoStr==='ABONO' ? 'A' : 'C');
+    const cartolaRaw = r[1] != null ? String(r[1]).replace(/^C/i,'').trim() : '';
+    const cartola = cartolaRaw && !isNaN(cartolaRaw) ? Number(cartolaRaw) : null;
+    const folioLm = r[7] != null && r[7] !== '' && !isNaN(r[7]) ? Number(r[7]) : (r[7] || null);
+    return {
+      cartola,
+      fecha: fmtFechaDMY(r[2]),
+      tipo_code,
+      tipo: tipo_code === 'A' ? 'ABONO (Ingreso)' : 'CARGO (Egreso)',
+      descripcion: String(r[4]||'').trim(),
+      rut_extraido: r[5] != null && r[5] !== '' ? parseInt(r[5]) : null,
+      monto: Math.round(Number(r[6])||0),
+      folio_lm: folioLm || null,
+      comprobante_lm: r[9] != null ? String(r[9]).trim() : '',
+      tipo_comprobante: r[10] != null ? String(r[10]).trim() : '',
+      criterio: r[11] != null ? String(r[11]).trim() : '',
+      nota: r[12] != null ? String(r[12]).trim() : '',
+      estado: r[15] || r[13] || 'NO CONCILIADO',
+      _editado: r[16] === true || r[16] === 'true' || r[16] === 'TRUE',
+      _girado_no_cobrado: r[17] && String(r[17]).trim() ? String(r[17]).trim() : undefined,
+    };
+  });
+
+  // ── Parsear Libro Mayor ──
+  // Cols visibles: 1=# 2=Fecha 3=Tipo 4=Folio 5=RUT 6=Glosa 7=Docto.
+  //                8=Debe 9=Haber 10=Saldo 11=Criterio 12=Cartola
+  //                13=Fecha Banco 14=Nota 15=Estado
+  // Cols ocultas:  16=conciliado 17=_editado 18=_girado_no_cobrado
+  const lmRows = XLSX.utils.sheet_to_json(wb.Sheets['Libro Mayor'], { header:1, defval:null });
+  const lmData = lmRows.slice(3).filter(r => r && r[0] != null && r[1]).map(r => {
+    const tc = String(r[2]||'').trim();
+    const tipo_code = tc === 'Ingreso' ? 'I' : tc === 'Egreso' ? 'E' : tc === 'Traspaso' ? 'T' : tc;
+    const folioRaw = r[3];
+    const folio = folioRaw != null && folioRaw !== '' && !isNaN(folioRaw) ? Number(folioRaw) : null;
+    const rutStr = r[4] != null ? String(r[4]).trim() : '';
+    let rut_num = null;
+    const m = rutStr.match(/^(\d+)/);
+    if (m) rut_num = parseInt(m[1]);
+    const estadoStr = r[14] || (r[15] ? 'CONCILIADO' : 'NO CONCILIADO');
+    const conciliado = r[15] === true || r[15] === 'true' || r[15] === 'TRUE'
+      || estadoStr === 'CONCILIADO';
+    return {
+      fecha: fmtFechaDMY(r[1]),
+      folio,
+      tipo: tc,
+      tipo_code,
+      rut: rutStr,
+      rut_num,
+      glosa: String(r[5]||'').trim(),
+      docto: r[6] != null ? String(r[6]).trim() : '',
+      debe: Math.round(Number(r[7])||0),
+      haber: Math.round(Number(r[8])||0),
+      saldo: r[9] != null && r[9] !== '' ? Math.round(Number(r[9])) : null,
+      criterio: r[10] != null ? String(r[10]).trim() : '',
+      nota: r[13] != null ? String(r[13]).trim() : '',
+      conciliado,
+      _editado: r[16] === true || r[16] === 'true' || r[16] === 'TRUE',
+      _girado_no_cobrado: r[17] && String(r[17]).trim() ? String(r[17]).trim() : undefined,
+    };
+  });
+
+  // ── Recalcular summary ──
+  const bancoAbonos = bancoData.filter(r => r.tipo_code === 'A');
+  const bancoCargos = bancoData.filter(r => r.tipo_code === 'C');
+  const summary = {
+    total: bancoData.length,
+    conciliados: bancoData.filter(r => r.estado === 'CONCILIADO').length,
+    no_conciliados: bancoData.filter(r => r.estado === 'NO CONCILIADO').length,
+    ambiguos: bancoData.filter(r => r.estado === 'AMBIGUO').length,
+    por_rut_monto: bancoData.filter(r => r.criterio === 'RUT+Monto').length,
+    por_monto: bancoData.filter(r => r.criterio === 'Solo Monto').length,
+    total_abonos: bancoAbonos.reduce((a,r)=>a+r.monto,0),
+    total_cargos: bancoCargos.reduce((a,r)=>a+r.monto,0),
+    lm_total: lmData.length,
+    lm_conciliados: lmData.filter(r => r.conciliado).length,
+    lm_no_conciliados: lmData.filter(r => !r.conciliado).length,
+  };
+
+  if (bancoData.length === 0 && lmData.length === 0) {
+    throw new Error('El archivo no contiene datos válidos en las hojas Cartola Banco / Libro Mayor.');
+  }
+
+  return {
+    data: { banco: bancoData, lm: lmData, summary },
+    cuenta
+  };
 }
 
 // ══════════════════════════════════════════════
@@ -759,6 +950,13 @@ function reconcile(banco, lm) {
 // ══════════════════════════════════════════════
 // SHOW RESULTS
 // ══════════════════════════════════════════════
+function countGNC(tipo) {
+  if (!DATA) return 0;
+  // tipo: 'actual' | 'anterior' | undefined (all)
+  const match = r => tipo ? r._girado_no_cobrado === tipo : !!r._girado_no_cobrado;
+  return DATA.banco.filter(match).length + DATA.lm.filter(match).length;
+}
+
 function showResults() {
   document.getElementById('upload-screen').style.display = 'none';
   document.getElementById('results-screen').style.display = 'flex';
@@ -767,11 +965,13 @@ function showResults() {
   const cLabel = DATA_CUENTA ? `${DATA_CUENTA.nombre} · Cta. ${DATA_CUENTA.num}` : 'Capital Humano';
   document.querySelector('#results-screen .topbar-title h1').textContent =
     `Comprobación Bancaria — ${DATA_CUENTA ? DATA_CUENTA.nombre : 'ANID'}`;
-  document.getElementById('topbar-sub').textContent = `ANID · ${cLabel} · ${files.banco.name}`;
+  document.getElementById('topbar-sub').textContent = `ANID · ${cLabel} · ${files.banco ? files.banco.name : (files.resume ? files.resume.name : '')}`;
   document.getElementById('r-cards').innerHTML = [
     { label:'Conciliados', val:`${s.conciliados}/${s.total}`, sub:pct+'% del total', cls:'green' },
     { label:'No Conciliados', val:s.no_conciliados, sub:'banco + LM', cls:'amber' },
     { label:'⚠ Ambiguos', val:s.ambiguos||0, sub:'revisión manual requerida', cls:'amber' },
+    { label:'📋 Girados · Mes Actual', val:countGNC('actual'), sub:'pendientes de cobro', cls:'amber' },
+    { label:'📋 Girados · Mes Anterior', val:countGNC('anterior'), sub:'arrastrados del periodo previo', cls:'amber' },
     { label:'Por RUT+Monto', val:s.por_rut_monto, sub:'exacto', cls:'green' },
     { label:'Solo por Monto', val:s.por_monto, sub:'sin RUT en banco', cls:'blue' },
     { label:'Total Abonos', val:'$'+(s.total_abonos/1e9).toFixed(2)+'B', sub:fmtNum(s.total_abonos), cls:'blue' },
@@ -779,20 +979,24 @@ function showResults() {
   ].map(c=>`<div class="card ${c.cls}"><div class="card-label">${c.label}</div><div class="card-value">${c.val}</div><div class="card-sub">${c.sub}</div></div>`).join('');
   document.getElementById('b-cnt-banco').textContent = s.total;
   document.getElementById('b-cnt-lm').textContent = s.lm_total;
-  document.getElementById('b-cnt-noc').textContent = s.no_conciliados + s.lm_no_conciliados + (s.ambiguos||0);
+  document.getElementById('b-cnt-noc').textContent = s.no_conciliados + s.lm_no_conciliados + (s.ambiguos||0) - countGNC();
+  document.getElementById('b-cnt-gnc').textContent = countGNC('actual');
+  document.getElementById('b-cnt-gnca').textContent = countGNC('anterior');
   switchTab('banco');
 }
 
 function resetApp() {
-  files={banco:null,lm:null}; DATA=null; DATA_CUENTA=null;
+  files={banco:null,lm:null,resume:null}; DATA=null; DATA_CUENTA=null;
   document.getElementById('upload-screen').style.display='flex';
   document.getElementById('results-screen').style.display='none';
-  ['banco','lm'].forEach(k=>{
+  ['banco','lm','resume'].forEach(k=>{
     document.getElementById('zone-'+k).classList.remove('loaded');
     document.getElementById('name-'+k).textContent='';
   });
   document.getElementById('btn-process').classList.remove('loading');
   document.getElementById('btn-process').disabled=true;
+  const btnText = document.getElementById('btn-process-text');
+  if (btnText) btnText.textContent = '⚡ Iniciar comprobación';
   document.querySelectorAll('.drop-zone input').forEach(i=>i.value='');
 }
 
@@ -801,7 +1005,7 @@ function resetApp() {
 // ══════════════════════════════════════════════
 function switchTab(tab) {
   currentTab=tab; currentPage=1;
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['banco','lm','noc'][i]===tab));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['banco','lm','noc','gnc','gnca'][i]===tab));
   document.getElementById('r-search').value='';
   document.getElementById('r-estado').value='';
   const rT=document.getElementById('r-tipo');
@@ -820,7 +1024,7 @@ function switchTab(tab) {
   } else {
     rC.style.display='none'; rT.style.display='none'; rCr.style.display='none';
   }
-  document.getElementById('r-estado').style.display=tab==='lm'?'none':'';
+  document.getElementById('r-estado').style.display=(tab==='lm'||tab==='gnc'||tab==='gnca')?'none':'';
   applyFilters(); renderTable();
 }
 
@@ -836,9 +1040,17 @@ function applyFilters() {
   let src;
   if (currentTab==='banco') src=DATA.banco;
   else if (currentTab==='lm') src=DATA.lm;
+  else if (currentTab==='gnc') src=[
+    ...DATA.banco.map((r,i)=>({...r,_src:'banco',_ri:i})).filter(r=>r._girado_no_cobrado==='actual'),
+    ...DATA.lm.map((r,i)=>({...r,_src:'lm',_ri:i})).filter(r=>r._girado_no_cobrado==='actual')
+  ];
+  else if (currentTab==='gnca') src=[
+    ...DATA.banco.map((r,i)=>({...r,_src:'banco',_ri:i})).filter(r=>r._girado_no_cobrado==='anterior'),
+    ...DATA.lm.map((r,i)=>({...r,_src:'lm',_ri:i})).filter(r=>r._girado_no_cobrado==='anterior')
+  ];
   else src=[
-    ...DATA.banco.map((r,i)=>({...r,_src:'banco',_ri:i})).filter(r=>r.estado==='NO CONCILIADO'||r.estado==='AMBIGUO'),
-    ...DATA.lm.map((r,i)=>({...r,_src:'lm',_ri:i})).filter(r=>!r.conciliado)
+    ...DATA.banco.map((r,i)=>({...r,_src:'banco',_ri:i})).filter(r=>(r.estado==='NO CONCILIADO'||r.estado==='AMBIGUO') && !r._girado_no_cobrado),
+    ...DATA.lm.map((r,i)=>({...r,_src:'lm',_ri:i})).filter(r=>!r.conciliado && !r._girado_no_cobrado)
   ];
   filtered=src.filter(r=>{
     if (q){
@@ -914,8 +1126,46 @@ function renderTable() {
       </tr>`;
     }).join(''):'<tr><td colspan="15" class="empty">Sin resultados</td></tr>';
 
+  } else if (currentTab==='gnc' || currentTab==='gnca') {
+    const isAnt = currentTab==='gnca';
+    const rowCls = isAnt ? 'girado-nca' : 'girado-nc';
+    const emptyMsg = isAnt
+      ? '📋 No hay movimientos marcados como girados y no cobrados del mes anterior'
+      : '📋 No hay movimientos marcados como girados y no cobrados';
+    thead.innerHTML=`<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción / Glosa</th><th style="text-align:right">Monto ($)</th><th>Referencia</th><th style="width:190px;text-align:center">Acción</th></tr>`;
+    tbody.innerHTML=rows.length?rows.map((r,i)=>{
+      const isBanco=r._src==='banco';
+      const monto=isBanco?r.monto:(r.debe>0?r.debe:r.haber);
+      const desc=isBanco?r.descripcion:r.glosa;
+      const ref=isBanco?(r.comprobante_lm||'—'):r.docto;
+      const realIdx = r._ri !== undefined ? r._ri : (isBanco ? DATA.banco.indexOf(r) : DATA.lm.indexOf(r));
+      const srcKey=isBanco?'banco':'lm';
+      // Botón de cambio de tipo (actual ↔ anterior)
+      const otherTipo = isAnt ? 'actual' : 'anterior';
+      const otherLabel = isAnt ? '↦ Mover a Mes Actual' : '↦ Mover a Mes Anterior';
+      return `<tr class="${rowCls}">
+        <td class="mono" style="color:var(--g4);font-size:10px">${start+i+1}</td>
+        <td>${isBanco?'<span class="pill banco-src">Banco</span>':'<span class="pill lm-src">Libro Mayor</span>'}</td>
+        <td class="mono" style="font-size:11px">${r.fecha}</td>
+        <td>${isBanco?(r.tipo_code==='A'?'<span class="pill abono">▲ Abono</span>':'<span class="pill cargo">▼ Cargo</span>'):tipoPill(r.tipo)}</td>
+        <td title="${esc(desc)}">${esc(desc)}</td>
+        <td class="amount" style="color:${isBanco&&r.tipo_code==='A'?'var(--green)':'var(--red)'}">${fmtNum(monto)}</td>
+        <td class="mono" style="font-size:11px">${ref}</td>
+        <td style="padding:6px 8px">
+          <div class="acc-cell">
+            <button class="acc-btn acc-btn-undo" onclick="unmarkGNC('${srcKey}',${realIdx})" title="Devolver a No Conciliados">
+              ↩ Devolver a No Conciliados
+            </button>
+            <button class="acc-btn acc-btn-undo" onclick="markGNC('${srcKey}',${realIdx},'${otherTipo}')" title="${otherLabel}">
+              ${otherLabel}
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }).join(''):'<tr><td colspan="8" class="empty">'+emptyMsg+'</td></tr>';
+
   } else {
-    thead.innerHTML=`<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción / Glosa</th><th style="text-align:right">Monto ($)</th><th>Referencia</th><th style="width:42px;text-align:center"></th></tr>`;
+    thead.innerHTML=`<tr><th>#</th><th>Fuente</th><th>Fecha</th><th>Tipo</th><th>Descripción / Glosa</th><th style="text-align:right">Monto ($)</th><th>Referencia</th><th style="width:210px;text-align:center">Acciones</th></tr>`;
     tbody.innerHTML=rows.length?rows.map((r,i)=>{
       const isBanco=r._src==='banco';
       const monto=isBanco?r.monto:(r.debe>0?r.debe:r.haber);
@@ -931,10 +1181,18 @@ function renderTable() {
         <td title="${esc(desc)}">${esc(desc)}</td>
         <td class="amount" style="color:${isBanco&&r.tipo_code==='A'?'var(--green)':'var(--red)'}">${fmtNum(monto)}</td>
         <td class="mono" style="font-size:11px">${ref}</td>
-        <td style="text-align:center;padding:6px 8px">
-          <button onclick="mOpen('${srcKey}',${realIdx})"
-            style="padding:4px 9px;font-size:12px;background:var(--navy);color:white;border:none;border-radius:6px;cursor:pointer;line-height:1.4"
-            title="Comprobar manualmente">🔗</button>
+        <td style="padding:6px 8px">
+          <div class="acc-cell">
+            <button class="acc-btn acc-btn-conc" onclick="mOpen('${srcKey}',${realIdx})" title="Comprobar manualmente con el otro origen">
+              🔗 Conciliar
+            </button>
+            <button class="acc-btn acc-btn-gnc" onclick="markGNC('${srcKey}',${realIdx},'actual')" title="Girado y no cobrado · mes actual">
+              📋 Girado · Mes Actual
+            </button>
+            <button class="acc-btn acc-btn-gnca" onclick="markGNC('${srcKey}',${realIdx},'anterior')" title="Girado y no cobrado · mes anterior · arrastre del periodo previo">
+              📋 Girado · Mes Anterior
+            </button>
+          </div>
         </td>
       </tr>`;
     }).join(''):'<tr><td colspan="8" class="empty">✅ Todo conciliado</td></tr>';
@@ -1233,7 +1491,7 @@ function mConfirm() {
   s.no_conciliados = DATA.banco.filter(r => r.estado === 'NO CONCILIADO').length;
   s.lm_conciliados    = DATA.lm.filter(r => r.conciliado).length;
   s.lm_no_conciliados = DATA.lm.filter(r => !r.conciliado).length;
-  document.getElementById('b-cnt-noc').textContent = s.no_conciliados + s.lm_no_conciliados;
+  document.getElementById('b-cnt-noc').textContent = s.no_conciliados + s.lm_no_conciliados - countGNC();
 
   // Actualizar tarjeta de conciliados
   const pct = (s.conciliados / s.total * 100).toFixed(1);
@@ -1247,6 +1505,61 @@ function mConfirm() {
   mClose();
   applyFilters();
   renderTable();
+}
+
+// ══════════════════════════════════════════════
+// GIRADOS Y NO COBRADOS — marcar / desmarcar
+// ══════════════════════════════════════════════
+function markGNC(src, idx, tipo) {
+  // tipo: 'actual' | 'anterior'
+  tipo = tipo || 'actual';
+  if (src === 'banco') {
+    DATA.banco[idx]._girado_no_cobrado = tipo;
+  } else {
+    DATA.lm[idx]._girado_no_cobrado = tipo;
+  }
+  refreshGNCCounters();
+  applyFilters();
+  renderTable();
+}
+
+function unmarkGNC(src, idx) {
+  if (src === 'banco') {
+    delete DATA.banco[idx]._girado_no_cobrado;
+  } else {
+    delete DATA.lm[idx]._girado_no_cobrado;
+  }
+  refreshGNCCounters();
+  applyFilters();
+  renderTable();
+}
+
+function refreshGNCCounters() {
+  if (!DATA) return;
+  const s = DATA.summary;
+  const gncTotal = countGNC();
+  const gncActual = countGNC('actual');
+  const gncAnt    = countGNC('anterior');
+  s.girados_no_cobrados = gncTotal;
+  s.girados_actual = gncActual;
+  s.girados_anterior = gncAnt;
+
+  // Badges de pestañas
+  const gncBadge  = document.getElementById('b-cnt-gnc');
+  const gncaBadge = document.getElementById('b-cnt-gnca');
+  if (gncBadge)  gncBadge.textContent  = gncActual;
+  if (gncaBadge) gncaBadge.textContent = gncAnt;
+
+  // Badge de No Conciliados (descontar todos los girados)
+  const nocBadge = document.getElementById('b-cnt-noc');
+  if (nocBadge) {
+    nocBadge.textContent = s.no_conciliados + s.lm_no_conciliados + (s.ambiguos||0) - gncTotal;
+  }
+
+  // Tarjetas resumen "Girados Mes Actual" (idx 3) y "Girados Mes Anterior" (idx 4)
+  const cards = document.getElementById('r-cards').children;
+  if (cards[3]) cards[3].querySelector('.card-value').textContent = gncActual;
+  if (cards[4]) cards[4].querySelector('.card-value').textContent = gncAnt;
 }
 
 // ── HELPERS ──
@@ -1311,6 +1624,8 @@ function setEstado(src, idx, nuevoEstado, event) {
     if (r.estado === nuevoEstado) return;
     if (nuevoEstado === 'CONCILIADO') {
       DATA.banco[idx] = { ...r, estado:'CONCILIADO', criterio: r.criterio||'Manual' };
+      // Si estaba marcado como Girado y No Cobrado, limpiar la marca
+      delete DATA.banco[idx]._girado_no_cobrado;
     } else {
       // Desenlazar LM si había match
       if (r.folio_lm != null) {
@@ -1324,6 +1639,7 @@ function setEstado(src, idx, nuevoEstado, event) {
     if ((nuevoEstado === 'CONCILIADO') === r.conciliado) return;
     if (nuevoEstado === 'CONCILIADO') {
       DATA.lm[idx] = { ...r, conciliado:true, criterio: r.criterio||'Manual' };
+      delete DATA.lm[idx]._girado_no_cobrado;
     } else {
       const bancoRow = DATA.banco.find(b => b.folio_lm === r.folio && b.estado === 'CONCILIADO');
       if (bancoRow) {
@@ -1340,11 +1656,16 @@ function setEstado(src, idx, nuevoEstado, event) {
   s.ambiguos          = DATA.banco.filter(r=>r.estado==='AMBIGUO').length;
   s.lm_conciliados    = DATA.lm.filter(r=>r.conciliado).length;
   s.lm_no_conciliados = DATA.lm.filter(r=>!r.conciliado).length;
-  document.getElementById('b-cnt-noc').textContent = s.no_conciliados + s.lm_no_conciliados + (s.ambiguos||0);
+  s.girados_no_cobrados = countGNC();
+  document.getElementById('b-cnt-noc').textContent = s.no_conciliados + s.lm_no_conciliados + (s.ambiguos||0) - countGNC();
+  document.getElementById('b-cnt-gnc').textContent = countGNC('actual');
+  document.getElementById('b-cnt-gnca').textContent = countGNC('anterior');
   const pct = (s.conciliados/s.total*100).toFixed(1);
   const cards = document.getElementById('r-cards').children;
   if (cards[0]) { cards[0].querySelector('.card-value').textContent=`${s.conciliados}/${s.total}`; cards[0].querySelector('.card-sub').textContent=pct+'% del total'; }
   if (cards[1]) cards[1].querySelector('.card-value').textContent = s.no_conciliados;
+  if (cards[3]) cards[3].querySelector('.card-value').textContent = countGNC('actual');
+  if (cards[4]) cards[4].querySelector('.card-value').textContent = countGNC('anterior');
   applyFilters(); renderTable();
 }
 function criterioPill(c,estado){
@@ -1485,7 +1806,7 @@ async function downloadExcel() {
     r.criterio || '',
     r.nota || '',
     r.estado,
-    r.tipo_code, r.estado, r._editado||false
+    r.tipo_code, r.estado, r._editado||false, r._girado_no_cobrado||''
   ];});
 
   buildSheet(wb, 'Cartola Banco', hB, wB, dB, (row) => {
@@ -1519,6 +1840,7 @@ async function downloadExcel() {
   wsBanco.getColumn(15).hidden = true;
   wsBanco.getColumn(16).hidden = true;
   wsBanco.getColumn(17).hidden = true;
+  wsBanco.getColumn(18).hidden = true; // _girado_no_cobrado
   // Dropdown editable en columna Estado (col 14)
   for (let ri = 4; ri <= DATA.banco.length + 3; ri++) {
     wsBanco.getCell(ri, 14).dataValidation = {
@@ -1547,7 +1869,7 @@ async function downloadExcel() {
     fcart,
     r.nota||'',
     r.conciliado ? 'CONCILIADO' : 'NO CONCILIADO',
-    r.conciliado, r._editado||false
+    r.conciliado, r._editado||false, r._girado_no_cobrado||''
   ];});
 
   buildSheet(wb, 'Libro Mayor', hL, wL, dL, (row) => {
@@ -1575,6 +1897,7 @@ async function downloadExcel() {
   const wsLM = wb.getWorksheet('Libro Mayor');
   wsLM.getColumn(16).hidden = true;
   wsLM.getColumn(17).hidden = true;
+  wsLM.getColumn(18).hidden = true; // _girado_no_cobrado
   // Dropdown Estado col 15 (shifted by Cartola, Fecha Banco, Nota columns)
   for (let ri = 4; ri <= DATA.lm.length + 3; ri++) {
     wsLM.getCell(ri, 15).dataValidation = {
@@ -1711,6 +2034,20 @@ async function downloadExcel() {
     if (sec.numFmt) valCell.numFmt = xNum();
     ri++;
   });
+
+  // ─────────────────────────────────────────────
+  // HOJA META (oculta) — permite recargar este Excel y reanudar el trabajo
+  // ─────────────────────────────────────────────
+  const wsMeta = wb.addWorksheet('_META', { state:'hidden' });
+  wsMeta.getCell(1,1).value = 'ANID_DASHBOARD_RESUMABLE_V1';
+  wsMeta.getCell(2,1).value = 'cuenta_num';
+  wsMeta.getCell(2,2).value = DATA_CUENTA ? DATA_CUENTA.num : '';
+  wsMeta.getCell(3,1).value = 'cuenta_nombre';
+  wsMeta.getCell(3,2).value = DATA_CUENTA ? DATA_CUENTA.nombre : '';
+  wsMeta.getCell(4,1).value = 'fecha_export';
+  wsMeta.getCell(4,2).value = fecha;
+  wsMeta.getCell(5,1).value = 'archivo_origen';
+  wsMeta.getCell(5,2).value = files.banco ? files.banco.name : (DATA._origen||'');
 
   // ── Generar y descargar ──
   const buf = await wb.xlsx.writeBuffer();
